@@ -47,6 +47,26 @@ function onResize() {
   windowRect = windowElement.getBoundingClientRect();
 }
 
+function positionStyle(radius, x, y, dist) {
+  // calculate both x and y with windowRect.height to maintain aspect ratio
+  return 'width: ' + Math.round(radius * 2 * windowRect.height) + 'px;' +
+    'height: ' + Math.round(radius * 2 * windowRect.height) + 'px;' +
+    'top: ' + Math.round(y * windowRect.height) + 'px;' + 
+    'left: ' + Math.round((x - dist) * windowRect.height) + 'px;';
+}
+
+function rotationStyle(vy) {
+  return 'transform: rotate(' + Math.max(-90, Math.min(90, Math.round(vy * 90000))) + 'deg);';
+}
+
+function playerStyle(player, dist) {
+  return positionStyle(player.radius, player.x, player.y, dist) + rotationStyle(player.vy);
+}
+
+function pickupStyle(pickup, dist) {
+  return positionStyle(pickup.radius, pickup.x, pickup.y, dist);
+}
+
 function draw(interpolationPercentage) {
   if (!State.current().paused) {
     instructions.setAttribute('style', 'display: none;');
@@ -57,8 +77,31 @@ function draw(interpolationPercentage) {
   fpsCounter.textContent = Math.round(State.current().fps) + ' FPS';
   distance.textContent = State.current().distance;
 
-  player.setAttribute('style', 'top: ' + Math.round(State.current().bird.y * windowRect.height) + 'px; left: 40px;' +
-    'transform: rotate(' + Math.max(-90, Math.min(90, Math.round(State.current().bird.vy * 90000))) + 'deg);');
+  player.setAttribute('style', playerStyle(State.current().bird, State.current().distance));
+
+  for (let pickup of State.current().pickups) {
+    let element = document.querySelector('#pickup' + pickup.id);
+    let isNew = !element;
+
+    if (isNew) {
+      element = document.createElement('div');
+      element.setAttribute('id', 'pickup' + pickup.id);
+      element.setAttribute('class', 'pickup');
+    }
+
+    element.setAttribute('style', pickupStyle(pickup, State.current().distance));
+
+    if (isNew) {
+      windowElement.appendChild(element);
+    }
+  }
+}
+
+function reset() {
+  let pickups = document.querySelectorAll('.pickup');
+  for (let pickup of pickups) {
+    pickup.remove();
+  }
 }
 
 function registerEvents(spaceCallback) {
@@ -84,7 +127,8 @@ function registerEvents(spaceCallback) {
 
 module.exports = {
   registerEvents: registerEvents,
-  draw: draw
+  draw: draw,
+  reset: reset
 }
 
 },{"./state":5}],4:[function(require,module,exports){
@@ -94,7 +138,6 @@ let DOMHelper = require('./domhelper');
 let Audio = require('./audio');
 
 // speed in millis
-let speed = 0.01 / 1000;
 let gravity = 0.0008 / 1000;
 
 function spaceDown() {
@@ -111,17 +154,40 @@ function spaceDown() {
  *   The amount of time since the last update, in milliseconds.
  */
 function update(delta) {
-  if (!State.current().paused) {
-    State.current().distance += speed * delta;
-  
-    State.current().bird.y += State.current().bird.vy * delta;
-    State.current().bird.vy += gravity * delta;
-  
-    State.current().bird.flapCooldown -= delta;
+  let state = State.current();
 
-    if (State.current().bird.y < 0 || State.current().bird.y > 1) {
+  if (!state.paused) {
+    // update position
+    state.bird.vx = state.speed;
+
+    state.distance += state.speed * delta;
+
+    state.bird.x += state.bird.vx * delta;
+    state.bird.y += state.bird.vy * delta;
+    state.bird.vy += gravity * delta;
+
+    if (state.bird.y < 0 || state.bird.y > 1) {
+      Audio.playCrash();
       State.reset();
+      DOMHelper.reset();
     }
+
+    let pickups = state.pickups;
+
+    // collisions
+    for (let pickup in pickups) {
+      let xDiff = pickups[pickup].x - state.bird.x;
+      let yDiff = pickups[pickup].y - state.bird.y;
+      let distanceToBird = Math.sqrt(xDiff * xDiff + yDiff * yDiff);
+      if (distanceToBird < state.bird.radius + pickups[pickup].radius) {
+        Audio.playCoin();
+        pickups.splice(pickup);
+        DOMHelper.reset();
+      }
+    }
+
+    // other logic
+    State.current().bird.flapCooldown -= delta;
   }
 }
 
@@ -133,31 +199,35 @@ function end(fps, panic) {
   }
 }
 
+State.reset();
 DOMHelper.registerEvents(spaceDown);
 MainLoop.setUpdate(update).setDraw(DOMHelper.draw).setEnd(end).start();
 
 },{"./audio":2,"./domhelper":3,"./state":5,"mainloop.js":1}],5:[function(require,module,exports){
-let state = {
-  paused: true,
-  fps: 0,
-  distance: 0,
-  bird: {
-    y: 0.5,
-    vy: 0,
-    flapCooldown: 0
-  }
-}
+let state;
+let globalId = 0;
 
 function reset() {
   state = {
     paused: true,
     fps: 0,
+    speed: 0.2 / 1000,
     distance: 0,
     bird: {
+      radius: 0.05,
+      x: 0.1,
       y: 0.5,
       vy: 0,
       flapCooldown: 0
-    }
+    },
+    pickups: [
+      {
+        id: globalId++,
+        radius: 0.05,
+        x: 0.5,
+        y: 0.5,
+      }
+    ]
   }
 }
 

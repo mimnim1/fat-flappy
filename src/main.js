@@ -4,7 +4,6 @@ let DOMHelper = require('./domhelper');
 let Audio = require('./audio');
 
 // speed in millis
-let speed = 0.01 / 1000;
 let gravity = 0.0008 / 1000;
 
 function spaceDown() {
@@ -21,17 +20,40 @@ function spaceDown() {
  *   The amount of time since the last update, in milliseconds.
  */
 function update(delta) {
-  if (!State.current().paused) {
-    State.current().distance += speed * delta;
-  
-    State.current().bird.y += State.current().bird.vy * delta;
-    State.current().bird.vy += gravity * delta;
-  
-    State.current().bird.flapCooldown -= delta;
+  let state = State.current();
 
-    if (State.current().bird.y < 0 || State.current().bird.y > 1) {
+  if (!state.paused) {
+    // update position
+    state.bird.vx = state.speed;
+
+    state.distance += state.speed * delta;
+
+    state.bird.x += state.bird.vx * delta;
+    state.bird.y += state.bird.vy * delta;
+    state.bird.vy += gravity * delta;
+
+    if (state.bird.y < 0 || state.bird.y > 1) {
+      Audio.playCrash();
       State.reset();
+      DOMHelper.reset();
     }
+
+    let pickups = state.pickups;
+
+    // collisions
+    for (let pickup in pickups) {
+      let xDiff = pickups[pickup].x - state.bird.x;
+      let yDiff = pickups[pickup].y - state.bird.y;
+      let distanceToBird = Math.sqrt(xDiff * xDiff + yDiff * yDiff);
+      if (distanceToBird < state.bird.radius + pickups[pickup].radius) {
+        Audio.playCoin();
+        pickups.splice(pickup);
+        DOMHelper.reset();
+      }
+    }
+
+    // other logic
+    State.current().bird.flapCooldown -= delta;
   }
 }
 

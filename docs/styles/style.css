@@ -26,10 +26,16 @@ html, body, .window {
 
 .player {
   position: fixed;
-  width: 5vh;
-  height: 5vh;
   background-repeat: no-repeat;
   background-image: url('../assets/bird.png');
+  background-origin: content-box;
+  background-size: 100%;
+}
+
+.pickup {
+  position: fixed;
+  background-repeat: no-repeat;
+  background-image: url('../assets/cookie.png');
   background-origin: content-box;
   background-size: 100%;
 }
