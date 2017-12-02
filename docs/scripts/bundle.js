@@ -131,7 +131,7 @@ function registerEvents(spaceCallback) {
     });
     
     window.addEventListener('keydown', (event) => {
-      if (event.which === 32) {
+      if (event.which === 32 && !event.repeat) {
         spaceCallback();
       }
     });
