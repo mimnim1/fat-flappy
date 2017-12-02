@@ -2,6 +2,7 @@ let State = require('./state');
 
 // DOM elements
 let windowElement;
+let instructions;
 let fpsCounter;
 let distance;
 let player;
@@ -13,6 +14,12 @@ function onResize() {
 }
 
 function draw(interpolationPercentage) {
+  if (!State.current().paused) {
+    instructions.setAttribute('style', 'display: none;');
+  } else {
+    instructions.setAttribute('style', '');
+  }
+
   fpsCounter.textContent = Math.round(State.current().fps) + ' FPS';
   distance.textContent = State.current().distance;
 
@@ -24,6 +31,7 @@ function registerEvents(spaceCallback) {
   window.addEventListener('DOMContentLoaded', () => {
     // assign all dom elements to variables
     windowElement = document.querySelector('.window');
+    instructions = document.querySelector('.instructions');
     fpsCounter = document.querySelector('.fpscounter');
     distance = document.querySelector('.distance');
     player = document.querySelector('.player');

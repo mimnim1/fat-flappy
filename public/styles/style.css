@@ -7,6 +7,16 @@ html, body, .window {
   background-color: skyblue;
 }
 
+.instructions {
+  color: white;
+  position: fixed;
+  font-size: 3em;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  top: 5vh;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 .stats {
   position: fixed;
   color: white;
