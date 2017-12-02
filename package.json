@@ -1,0 +1,9 @@
+{
+  "name": "fat-flappy",
+  "version": "1.0.0",
+  "author": "Mim",
+  "license": "MIT",
+  "devDependencies": {
+    "mainloop.js": "^1.0.4"
+  }
+}

@@ -1,0 +1,26 @@
+html, body, .window {
+  height: 100%;
+  width: 100%;
+}
+
+.window {
+  background-color: skyblue;
+}
+
+.stats {
+  position: fixed;
+  color: white;
+  bottom: 5px;
+  left: 5px;
+}
+
+.player {
+  position: fixed;
+  width: 50px;
+  height: 50px;
+  background-color: brown;
+}
+
+.stats > span {
+  margin: 10px;
+}
