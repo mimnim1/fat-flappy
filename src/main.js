@@ -11,7 +11,7 @@ function spaceDown() {
     State.current().paused = false;
     Audio.playJump();
     State.current().bird.vy = -0.0006;
-    State.current().bird.flapCooldown = 400;
+    State.current().bird.flapCooldown = 200;
   }
 }
 

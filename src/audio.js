@@ -3,6 +3,7 @@ let Settings = require('./settings')();
 let audioCoin = new Audio('assets/coin.wav');
 let audioCrash = new Audio('assets/crash.wav');
 let audioJump = new Audio('assets/jump.wav');
+audioJump.volume = 0.6;
 let audioPowerup = new Audio('assets/powerup.wav');
 let audioWarning = new Audio('assets/warning.wav');
 
