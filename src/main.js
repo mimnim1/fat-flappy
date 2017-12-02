@@ -43,5 +43,6 @@ function end(fps, panic) {
   }
 }
 
+State.reset();
 DOMHelper.registerEvents(spaceDown);
 MainLoop.setUpdate(update).setDraw(DOMHelper.draw).setEnd(end).start();
