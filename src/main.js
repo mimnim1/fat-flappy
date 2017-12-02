@@ -1,40 +1,18 @@
-let MainLoop = require('mainloop.js')
-// audio
-let audioCoin = new Audio('assets/coin.wav');
-let audioCrash = new Audio('assets/crash.wav');
-let audioJump = new Audio('assets/jump.wav');
-let audioPowerup = new Audio('assets/powerup.wav');
-let audioWarning = new Audio('assets/warning.wav');
+let State = require('./state');
+let MainLoop = require('mainloop.js');
+let DOMHelper = require('./domhelper');
+let Audio = require('./audio');
 
-// DOM elements
-let fpsCounter;
-let distanceElement;
-let playerElement;
-
-// variables
-let currentFps = 0.0;
-
-let distance = 0.0;
 // speed in millis
-let speed = 1 / 1000;
-let gravity = 0.8 / 1000;
-
-let playerY = 0.0;
-let playerVY = 0.0;
-let flapCooldown = 0.0;
+let speed = 0.01 / 1000;
+let gravity = 0.0008 / 1000;
 
 function spaceDown() {
-  if (flapCooldown <= 0) {
-    // replay the audio
-    audioJump.pause();
-    audioJump.currentTime = 0;
-    audioJump.play();
-
-    // update speed
-    playerVY = -0.6;
-
-    // set cooldown in millis
-    flapCooldown = 400;
+  if (State.current().bird.flapCooldown <= 0) {
+    State.current().paused = false;
+    Audio.playJump();
+    State.current().bird.vy = -0.0006;
+    State.current().bird.flapCooldown = 400;
   }
 }
 
@@ -43,57 +21,27 @@ function spaceDown() {
  *   The amount of time since the last update, in milliseconds.
  */
 function update(delta) {
-  distance += speed * delta;
+  if (!State.current().paused) {
+    State.current().distance += speed * delta;
+  
+    State.current().bird.y += State.current().bird.vy * delta;
+    State.current().bird.vy += gravity * delta;
+  
+    State.current().bird.flapCooldown -= delta;
 
-  playerY += playerVY * delta;
-  playerVY += gravity * delta;
-
-  flapCooldown -= delta;
+    if (State.current().bird.y < 0 || State.current().bird.y > 1) {
+      State.reset();
+    }
+  }
 }
 
-/**
-* @param {Number} interpolationPercentage
-*   How much to interpolate between frames.
-*/
-function draw(interpolationPercentage) {
-  fpsCounter.textContent = Math.round(currentFps) + ' FPS';
-  distanceElement.textContent = distance;
-
-  playerElement.setAttribute('style', 'top: ' + Math.round(playerY) + 'px; left: 40px;');
-}
-
-/**
-* @param {Number} fps
-*   The smoothed frames per second.
-* @param {Boolean} panic
-*   Whether the main loop panicked because the simulation fell too far behind
-*   real time.
-*/
 function end(fps, panic) {
-  currentFps = fps;
+  State.current().fps = fps;
   if (panic) {
-      // This pattern introduces non-deterministic behavior, but in this case
-      // it's better than the alternative (the application would look like it
-      // was running very quickly until the simulation caught up to real
-      // time). See the documentation for `MainLoop.setEnd()` for additional
-      // explanation.
       var discardedTime = Math.round(MainLoop.resetFrameDelta());
       console.warn('Main loop panicked, probably because the browser tab was put in the background. Discarding ' + discardedTime + 'ms');
   }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-  fpsCounter = document.querySelector('.fpscounter');
-  distanceElement = document.querySelector('.distance');
-  playerElement = document.querySelector('.player');
-
-  window.addEventListener('keydown', (event) => {
-    switch (event.which) {
-      case 32:
-        spaceDown();
-        break;
-    }
-  });
-
-  MainLoop.setUpdate(update).setDraw(draw).setEnd(end).start();
-});
+DOMHelper.registerEvents(spaceDown);
+MainLoop.setUpdate(update).setDraw(DOMHelper.draw).setEnd(end).start();

@@ -9,43 +9,92 @@
 !function(a){function b(a){if(x=q(b),!(a<e+l)){for(d+=a-e,e=a,t(a,d),a>i+h&&(f=g*j*1e3/(a-i)+(1-g)*f,i=a,j=0),j++,k=0;d>=c;)if(u(c),d-=c,++k>=240){o=!0;break}v(d/c),w(f,o),o=!1}}var c=1e3/60,d=0,e=0,f=60,g=.9,h=1e3,i=0,j=0,k=0,l=0,m=!1,n=!1,o=!1,p="object"==typeof window?window:a,q=p.requestAnimationFrame||function(){var a=Date.now(),b,d;return function(e){return b=Date.now(),d=Math.max(0,c-(b-a)),a=b+d,setTimeout(function(){e(b+d)},d)}}(),r=p.cancelAnimationFrame||clearTimeout,s=function(){},t=s,u=s,v=s,w=s,x;a.MainLoop={getSimulationTimestep:function(){return c},setSimulationTimestep:function(a){return c=a,this},getFPS:function(){return f},getMaxAllowedFPS:function(){return 1e3/l},setMaxAllowedFPS:function(a){return"undefined"==typeof a&&(a=1/0),0===a?this.stop():l=1e3/a,this},resetFrameDelta:function(){var a=d;return d=0,a},setBegin:function(a){return t=a||t,this},setUpdate:function(a){return u=a||u,this},setDraw:function(a){return v=a||v,this},setEnd:function(a){return w=a||w,this},start:function(){return n||(n=!0,x=q(function(a){v(1),m=!0,e=a,i=a,j=0,x=q(b)})),this},stop:function(){return m=!1,n=!1,r(x),this},isRunning:function(){return m}},"function"==typeof define&&define.amd?define(a.MainLoop):"object"==typeof module&&null!==module&&"object"==typeof module.exports&&(module.exports=a.MainLoop)}(this);
 
 },{}],2:[function(require,module,exports){
-let MainLoop = require('mainloop.js')
-// audio
 let audioCoin = new Audio('assets/coin.wav');
 let audioCrash = new Audio('assets/crash.wav');
 let audioJump = new Audio('assets/jump.wav');
 let audioPowerup = new Audio('assets/powerup.wav');
 let audioWarning = new Audio('assets/warning.wav');
 
+function play(audio) {
+  return () => {
+    audio.pause();
+    audio.currentTime = 0;
+    audio.play();
+  }
+}
+
+module.exports = {
+  playCoin: play(audioCoin),
+  playCrash: play(audioCrash),
+  playJump: play(audioJump),
+  playPowerup: play(audioPowerup),
+  playWarning: play(audioWarning)
+}
+
+},{}],3:[function(require,module,exports){
+let State = require('./state');
+
 // DOM elements
+let windowElement;
 let fpsCounter;
-let distanceElement;
-let playerElement;
+let distance;
+let player;
 
-// variables
-let currentFps = 0.0;
+let windowRect = { width: 1, height: 1 };
 
-let distance = 0.0;
+function onResize() {
+  windowRect = windowElement.getBoundingClientRect();
+}
+
+function draw(interpolationPercentage) {
+  fpsCounter.textContent = Math.round(State.current().fps) + ' FPS';
+  distance.textContent = State.current().distance;
+
+  player.setAttribute('style', 'top: ' + Math.round(State.current().bird.y * windowRect.height) + 'px; left: 40px;' +
+    'transform: rotate(' + Math.max(-90, Math.min(90, Math.round(State.current().bird.vy * 90000))) + 'deg);');
+}
+
+function registerEvents(spaceCallback) {
+  window.addEventListener('DOMContentLoaded', () => {
+    // assign all dom elements to variables
+    windowElement = document.querySelector('.window');
+    fpsCounter = document.querySelector('.fpscounter');
+    distance = document.querySelector('.distance');
+    player = document.querySelector('.player');
+    
+    window.addEventListener('keydown', (event) => {
+      if (event.which === 32) {
+        spaceCallback();
+      }
+    });
+    
+    // resize on load
+    onResize();
+    window.addEventListener('resize', onResize);
+  });
+}
+
+module.exports = {
+  registerEvents: registerEvents,
+  draw: draw
+}
+
+},{"./state":5}],4:[function(require,module,exports){
+let State = require('./state');
+let MainLoop = require('mainloop.js');
+let DOMHelper = require('./domhelper');
+let Audio = require('./audio');
+
 // speed in millis
-let speed = 1 / 1000;
-let gravity = 0.8 / 1000;
-
-let playerY = 0.0;
-let playerVY = 0.0;
-let flapCooldown = 0.0;
+let speed = 0.01 / 1000;
+let gravity = 0.0008 / 1000;
 
 function spaceDown() {
-  if (flapCooldown <= 0) {
-    // replay the audio
-    audioJump.pause();
-    audioJump.currentTime = 0;
-    audioJump.play();
-
-    // update speed
-    playerVY = -0.6;
-
-    // set cooldown in millis
-    flapCooldown = 400;
+  if (State.current().bird.flapCooldown <= 0) {
+    State.current().paused = false;
+    Audio.playJump();
+    State.current().bird.vy = -0.0006;
+    State.current().bird.flapCooldown = 400;
   }
 }
 
@@ -54,59 +103,58 @@ function spaceDown() {
  *   The amount of time since the last update, in milliseconds.
  */
 function update(delta) {
-  distance += speed * delta;
+  if (!State.current().paused) {
+    State.current().distance += speed * delta;
+  
+    State.current().bird.y += State.current().bird.vy * delta;
+    State.current().bird.vy += gravity * delta;
+  
+    State.current().bird.flapCooldown -= delta;
 
-  playerY += playerVY * delta;
-  playerVY += gravity * delta;
-
-  flapCooldown -= delta;
+    if (State.current().bird.y < 0 || State.current().bird.y > 1) {
+      State.reset();
+    }
+  }
 }
 
-/**
-* @param {Number} interpolationPercentage
-*   How much to interpolate between frames.
-*/
-function draw(interpolationPercentage) {
-  fpsCounter.textContent = Math.round(currentFps) + ' FPS';
-  distanceElement.textContent = distance;
-
-  playerElement.setAttribute('style', 'top: ' + Math.round(playerY) + 'px; left: 40px;');
-}
-
-/**
-* @param {Number} fps
-*   The smoothed frames per second.
-* @param {Boolean} panic
-*   Whether the main loop panicked because the simulation fell too far behind
-*   real time.
-*/
 function end(fps, panic) {
-  currentFps = fps;
+  State.current().fps = fps;
   if (panic) {
-      // This pattern introduces non-deterministic behavior, but in this case
-      // it's better than the alternative (the application would look like it
-      // was running very quickly until the simulation caught up to real
-      // time). See the documentation for `MainLoop.setEnd()` for additional
-      // explanation.
       var discardedTime = Math.round(MainLoop.resetFrameDelta());
       console.warn('Main loop panicked, probably because the browser tab was put in the background. Discarding ' + discardedTime + 'ms');
   }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-  fpsCounter = document.querySelector('.fpscounter');
-  distanceElement = document.querySelector('.distance');
-  playerElement = document.querySelector('.player');
+DOMHelper.registerEvents(spaceDown);
+MainLoop.setUpdate(update).setDraw(DOMHelper.draw).setEnd(end).start();
 
-  window.addEventListener('keydown', (event) => {
-    switch (event.which) {
-      case 32:
-        spaceDown();
-        break;
+},{"./audio":2,"./domhelper":3,"./state":5,"mainloop.js":1}],5:[function(require,module,exports){
+let state = {
+  paused: true,
+  fps: 0,
+  distance: 0,
+  bird: {
+    y: 0.5,
+    vy: 0,
+    flapCooldown: 0
+  }
+}
+
+function reset() {
+  state = {
+    paused: true,
+    fps: 0,
+    distance: 0,
+    bird: {
+      y: 0.5,
+      vy: 0,
+      flapCooldown: 0
     }
-  });
+  }
+}
 
-  MainLoop.setUpdate(update).setDraw(draw).setEnd(end).start();
-});
-
-},{"mainloop.js":1}]},{},[2]);
+module.exports = {
+  current: () => state,
+  reset: reset
+}
+},{}]},{},[4]);
