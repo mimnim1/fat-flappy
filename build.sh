@@ -1,5 +1,5 @@
-rm -r -f dist
-mkdir dist
-mkdir dist/scripts
-cp -R public/* dist/
-browserify ./src/main.js -o dist/scripts/bundle.js
+rm -r -f docs
+mkdir docs
+mkdir docs/scripts
+cp -R public/* docs/
+browserify ./src/main.js -o docs/scripts/bundle.js
