@@ -9,6 +9,8 @@
 !function(a){function b(a){if(x=q(b),!(a<e+l)){for(d+=a-e,e=a,t(a,d),a>i+h&&(f=g*j*1e3/(a-i)+(1-g)*f,i=a,j=0),j++,k=0;d>=c;)if(u(c),d-=c,++k>=240){o=!0;break}v(d/c),w(f,o),o=!1}}var c=1e3/60,d=0,e=0,f=60,g=.9,h=1e3,i=0,j=0,k=0,l=0,m=!1,n=!1,o=!1,p="object"==typeof window?window:a,q=p.requestAnimationFrame||function(){var a=Date.now(),b,d;return function(e){return b=Date.now(),d=Math.max(0,c-(b-a)),a=b+d,setTimeout(function(){e(b+d)},d)}}(),r=p.cancelAnimationFrame||clearTimeout,s=function(){},t=s,u=s,v=s,w=s,x;a.MainLoop={getSimulationTimestep:function(){return c},setSimulationTimestep:function(a){return c=a,this},getFPS:function(){return f},getMaxAllowedFPS:function(){return 1e3/l},setMaxAllowedFPS:function(a){return"undefined"==typeof a&&(a=1/0),0===a?this.stop():l=1e3/a,this},resetFrameDelta:function(){var a=d;return d=0,a},setBegin:function(a){return t=a||t,this},setUpdate:function(a){return u=a||u,this},setDraw:function(a){return v=a||v,this},setEnd:function(a){return w=a||w,this},start:function(){return n||(n=!0,x=q(function(a){v(1),m=!0,e=a,i=a,j=0,x=q(b)})),this},stop:function(){return m=!1,n=!1,r(x),this},isRunning:function(){return m}},"function"==typeof define&&define.amd?define(a.MainLoop):"object"==typeof module&&null!==module&&"object"==typeof module.exports&&(module.exports=a.MainLoop)}(this);
 
 },{}],2:[function(require,module,exports){
+let Settings = require('./settings')();
+
 let audioCoin = new Audio('assets/coin.wav');
 let audioCrash = new Audio('assets/crash.wav');
 let audioJump = new Audio('assets/jump.wav');
@@ -17,9 +19,11 @@ let audioWarning = new Audio('assets/warning.wav');
 
 function play(audio) {
   return () => {
-    audio.pause();
-    audio.currentTime = 0;
-    audio.play();
+    if (!Settings.mute) {
+      audio.pause();
+      audio.currentTime = 0;
+      audio.play();
+    }
   }
 }
 
@@ -31,11 +35,13 @@ module.exports = {
   playWarning: play(audioWarning)
 }
 
-},{}],3:[function(require,module,exports){
+},{"./settings":5}],3:[function(require,module,exports){
 let State = require('./state');
+let Settings = require('./settings')();
 
 // DOM elements
 let windowElement;
+let mute;
 let instructions;
 let fpsCounter;
 let distance;
@@ -68,6 +74,12 @@ function pickupStyle(pickup, dist) {
 }
 
 function draw(interpolationPercentage) {
+  if (Settings.mute) {
+    mute.setAttribute('style', 'text-decoration: line-through;');
+  } else {
+    mute.setAttribute('style', '');
+  }
+
   if (!State.current().paused) {
     instructions.setAttribute('style', 'display: none;');
   } else {
@@ -108,10 +120,15 @@ function registerEvents(spaceCallback) {
   window.addEventListener('DOMContentLoaded', () => {
     // assign all dom elements to variables
     windowElement = document.querySelector('.window');
+    mute = document.querySelector('.mute');
     instructions = document.querySelector('.instructions');
     fpsCounter = document.querySelector('.fpscounter');
     distance = document.querySelector('.distance');
     player = document.querySelector('.player');
+
+    mute.addEventListener('click', (event) => {
+      Settings.mute = !Settings.mute;
+    });
     
     window.addEventListener('keydown', (event) => {
       if (event.which === 32) {
@@ -131,7 +148,7 @@ module.exports = {
   reset: reset
 }
 
-},{"./state":5}],4:[function(require,module,exports){
+},{"./settings":5,"./state":6}],4:[function(require,module,exports){
 let State = require('./state');
 let MainLoop = require('mainloop.js');
 let DOMHelper = require('./domhelper');
@@ -203,7 +220,14 @@ State.reset();
 DOMHelper.registerEvents(spaceDown);
 MainLoop.setUpdate(update).setDraw(DOMHelper.draw).setEnd(end).start();
 
-},{"./audio":2,"./domhelper":3,"./state":5,"mainloop.js":1}],5:[function(require,module,exports){
+},{"./audio":2,"./domhelper":3,"./state":6,"mainloop.js":1}],5:[function(require,module,exports){
+let settings = {
+    mute: false
+}
+
+module.exports = () => settings;
+
+},{}],6:[function(require,module,exports){
 let state;
 let globalId = 0;
 

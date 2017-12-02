@@ -1,3 +1,5 @@
+let Settings = require('./settings')();
+
 let audioCoin = new Audio('assets/coin.wav');
 let audioCrash = new Audio('assets/crash.wav');
 let audioJump = new Audio('assets/jump.wav');
@@ -6,9 +8,11 @@ let audioWarning = new Audio('assets/warning.wav');
 
 function play(audio) {
   return () => {
-    audio.pause();
-    audio.currentTime = 0;
-    audio.play();
+    if (!Settings.mute) {
+      audio.pause();
+      audio.currentTime = 0;
+      audio.play();
+    }
   }
 }
 

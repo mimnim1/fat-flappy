@@ -1,7 +1,9 @@
 let State = require('./state');
+let Settings = require('./settings')();
 
 // DOM elements
 let windowElement;
+let mute;
 let instructions;
 let fpsCounter;
 let distance;
@@ -34,6 +36,12 @@ function pickupStyle(pickup, dist) {
 }
 
 function draw(interpolationPercentage) {
+  if (Settings.mute) {
+    mute.setAttribute('style', 'text-decoration: line-through;');
+  } else {
+    mute.setAttribute('style', '');
+  }
+
   if (!State.current().paused) {
     instructions.setAttribute('style', 'display: none;');
   } else {
@@ -74,10 +82,15 @@ function registerEvents(spaceCallback) {
   window.addEventListener('DOMContentLoaded', () => {
     // assign all dom elements to variables
     windowElement = document.querySelector('.window');
+    mute = document.querySelector('.mute');
     instructions = document.querySelector('.instructions');
     fpsCounter = document.querySelector('.fpscounter');
     distance = document.querySelector('.distance');
     player = document.querySelector('.player');
+
+    mute.addEventListener('click', (event) => {
+      Settings.mute = !Settings.mute;
+    });
     
     window.addEventListener('keydown', (event) => {
       if (event.which === 32) {

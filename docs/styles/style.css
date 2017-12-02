@@ -1,3 +1,8 @@
+* {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  user-select: none;
+}
+
 html, body, .window {
   height: 100%;
   width: 100%;
@@ -7,11 +12,21 @@ html, body, .window {
   background-color: skyblue;
 }
 
+.mute {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  padding: 8px;
+  color: brown;
+  background-color: beige;
+  border: 3px solid burlywood;
+  border-radius: 5px;
+}
+
 .instructions {
   color: white;
   position: fixed;
   font-size: 3em;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   top: 5vh;
   left: 50%;
   transform: translateX(-50%);
