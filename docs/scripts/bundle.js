@@ -185,7 +185,7 @@ function update(delta) {
     // update position
     state.bird.x += state.bird.vx * delta;
     state.bird.y += state.bird.vy * delta;
-    state.bird.vy += state.gravity * delta;
+    state.bird.vy += state.gravity * state.bird.mass * delta;
 
     if (state.bird.y < 0 || state.bird.y > 1) {
       Audio.playCrash();
@@ -202,8 +202,36 @@ function update(delta) {
       let distanceToBird = Math.sqrt(xDiff * xDiff + yDiff * yDiff);
       if (distanceToBird < state.bird.radius + pickups[pickup].radius) {
         Audio.playCoin();
-        pickups.splice(pickup);
+        state.bird.mass += 1;
+        pickups.splice(pickup, 1);
         DOMHelper.reset();
+      }
+    }
+
+    // generate pickups
+    if (state.lastGen < state.bird.x + 1) {
+      state.lastGen += 1;
+
+      let rand = Math.random();
+
+      console.log('Generate ' + rand);
+
+      if (rand < 0.4) {
+        pickups.push({
+          id: State.newId(),
+          radius: 0.05,
+          x: state.lastGen,
+          y: 0.5,
+        });
+      }
+
+      if (rand < 0.2) {
+        pickups.push({
+          id: State.newId(),
+          radius: 0.05,
+          x: state.lastGen,
+          y: 0.2,
+        });
       }
     }
 
@@ -241,19 +269,27 @@ function reset() {
     fps: 0,
     gravity: 0.0008 / 1000,
     bird: {
+      mass: 1,
       radius: 0.05,
       x: 0,
       y: 0.5,
-      vx: 0.2 / 1000,
+      vx: 0.7 / 1000,
       vy: 0,
       flapCooldown: 0
     },
+    lastGen: 0.5,
     pickups: [
       {
         id: globalId++,
         radius: 0.05,
         x: 0.5,
         y: 0.5,
+      },
+      {
+        id: globalId++,
+        radius: 0.05,
+        x: 0.5,
+        y: 0.2,
       }
     ]
   }
@@ -261,6 +297,7 @@ function reset() {
 
 module.exports = {
   current: () => state,
+  newId: () => globalId++,
   reset: reset
 }
 },{}]},{},[4]);
