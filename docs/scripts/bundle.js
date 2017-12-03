@@ -54,24 +54,28 @@ function onResize() {
   windowRect = windowElement.getBoundingClientRect();
 }
 
-function positionStyle(radius, x, y, dist) {
+function screenX() {
+  return State.current().bird.x - 0.1;
+}
+
+function positionStyle(radius, x, y) {
   // calculate both x and y with windowRect.height to maintain aspect ratio
   return 'width: ' + Math.round(radius * 2 * windowRect.height) + 'px;' +
     'height: ' + Math.round(radius * 2 * windowRect.height) + 'px;' +
     'top: ' + Math.round(y * windowRect.height) + 'px;' + 
-    'left: ' + Math.round((x - dist) * windowRect.height) + 'px;';
+    'left: ' + Math.round((x - screenX()) * windowRect.height) + 'px;';
 }
 
 function rotationStyle(vy) {
   return 'transform: rotate(' + Math.max(-90, Math.min(90, Math.round(vy * 90000))) + 'deg);';
 }
 
-function playerStyle(player, dist) {
-  return positionStyle(player.radius, player.x, player.y, dist) + rotationStyle(player.vy);
+function playerStyle(player) {
+  return positionStyle(player.radius, player.x, player.y) + rotationStyle(player.vy);
 }
 
-function pickupStyle(pickup, dist) {
-  return positionStyle(pickup.radius, pickup.x, pickup.y, dist);
+function pickupStyle(pickup) {
+  return positionStyle(pickup.radius, pickup.x, pickup.y);
 }
 
 function draw(interpolationPercentage) {
@@ -88,9 +92,9 @@ function draw(interpolationPercentage) {
   }
 
   fpsCounter.textContent = Math.round(State.current().fps) + ' FPS';
-  distance.textContent = State.current().distance;
+  distance.textContent = screenX();
 
-  player.setAttribute('style', playerStyle(State.current().bird, State.current().distance));
+  player.setAttribute('style', playerStyle(State.current().bird));
 
   for (let pickup of State.current().pickups) {
     let element = document.querySelector('#pickup' + pickup.id);
@@ -102,7 +106,7 @@ function draw(interpolationPercentage) {
       element.setAttribute('class', 'pickup');
     }
 
-    element.setAttribute('style', pickupStyle(pickup, State.current().distance));
+    element.setAttribute('style', pickupStyle(pickup));
 
     if (isNew) {
       windowElement.appendChild(element);
@@ -136,6 +140,12 @@ function registerEvents(spaceCallback) {
         spaceCallback();
       }
     });
+
+    window.addEventListener('mousedown', (event) => {
+      if (event.button === 0 && !event.repeat) {
+        spaceCallback();
+      }
+    });
     
     // resize on load
     onResize();
@@ -155,15 +165,12 @@ let MainLoop = require('mainloop.js');
 let DOMHelper = require('./domhelper');
 let Audio = require('./audio');
 
-// speed in millis
-let gravity = 0.0008 / 1000;
-
 function spaceDown() {
   if (State.current().bird.flapCooldown <= 0) {
     State.current().paused = false;
     Audio.playJump();
     State.current().bird.vy = -0.0006;
-    State.current().bird.flapCooldown = 200;
+    State.current().bird.flapCooldown = 10;
   }
 }
 
@@ -176,13 +183,9 @@ function update(delta) {
 
   if (!state.paused) {
     // update position
-    state.bird.vx = state.speed;
-
-    state.distance += state.speed * delta;
-
     state.bird.x += state.bird.vx * delta;
     state.bird.y += state.bird.vy * delta;
-    state.bird.vy += gravity * delta;
+    state.bird.vy += state.gravity * delta;
 
     if (state.bird.y < 0 || state.bird.y > 1) {
       Audio.playCrash();
@@ -236,12 +239,12 @@ function reset() {
   state = {
     paused: true,
     fps: 0,
-    speed: 0.2 / 1000,
-    distance: 0,
+    gravity: 0.0008 / 1000,
     bird: {
       radius: 0.05,
-      x: 0.1,
+      x: 0,
       y: 0.5,
+      vx: 0.2 / 1000,
       vy: 0,
       flapCooldown: 0
     },

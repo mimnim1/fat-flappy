@@ -15,24 +15,28 @@ function onResize() {
   windowRect = windowElement.getBoundingClientRect();
 }
 
-function positionStyle(radius, x, y, dist) {
+function screenX() {
+  return State.current().bird.x - 0.1;
+}
+
+function positionStyle(radius, x, y) {
   // calculate both x and y with windowRect.height to maintain aspect ratio
   return 'width: ' + Math.round(radius * 2 * windowRect.height) + 'px;' +
     'height: ' + Math.round(radius * 2 * windowRect.height) + 'px;' +
     'top: ' + Math.round(y * windowRect.height) + 'px;' + 
-    'left: ' + Math.round((x - dist) * windowRect.height) + 'px;';
+    'left: ' + Math.round((x - screenX()) * windowRect.height) + 'px;';
 }
 
 function rotationStyle(vy) {
   return 'transform: rotate(' + Math.max(-90, Math.min(90, Math.round(vy * 90000))) + 'deg);';
 }
 
-function playerStyle(player, dist) {
-  return positionStyle(player.radius, player.x, player.y, dist) + rotationStyle(player.vy);
+function playerStyle(player) {
+  return positionStyle(player.radius, player.x, player.y) + rotationStyle(player.vy);
 }
 
-function pickupStyle(pickup, dist) {
-  return positionStyle(pickup.radius, pickup.x, pickup.y, dist);
+function pickupStyle(pickup) {
+  return positionStyle(pickup.radius, pickup.x, pickup.y);
 }
 
 function draw(interpolationPercentage) {
@@ -49,9 +53,9 @@ function draw(interpolationPercentage) {
   }
 
   fpsCounter.textContent = Math.round(State.current().fps) + ' FPS';
-  distance.textContent = State.current().distance;
+  distance.textContent = screenX();
 
-  player.setAttribute('style', playerStyle(State.current().bird, State.current().distance));
+  player.setAttribute('style', playerStyle(State.current().bird));
 
   for (let pickup of State.current().pickups) {
     let element = document.querySelector('#pickup' + pickup.id);
@@ -63,7 +67,7 @@ function draw(interpolationPercentage) {
       element.setAttribute('class', 'pickup');
     }
 
-    element.setAttribute('style', pickupStyle(pickup, State.current().distance));
+    element.setAttribute('style', pickupStyle(pickup));
 
     if (isNew) {
       windowElement.appendChild(element);
@@ -94,6 +98,12 @@ function registerEvents(spaceCallback) {
     
     window.addEventListener('keydown', (event) => {
       if (event.which === 32 && !event.repeat) {
+        spaceCallback();
+      }
+    });
+
+    window.addEventListener('mousedown', (event) => {
+      if (event.button === 0 && !event.repeat) {
         spaceCallback();
       }
     });
