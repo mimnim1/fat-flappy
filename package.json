@@ -4,6 +4,7 @@
   "author": "Mim",
   "license": "MIT",
   "devDependencies": {
-    "mainloop.js": "^1.0.4"
+    "mainloop.js": "^1.0.4",
+    "webpack": "^3.10.0"
   }
 }

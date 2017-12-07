@@ -1,6 +1,6 @@
 const save = {
-    bestScore: 0,
-    lastScore: 0,
+  bestScore: 0,
+  lastScore: 0,
 };
 
 const storage = window.localStorage;

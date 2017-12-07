@@ -88,8 +88,8 @@ function update(delta) {
 function end(fps, panic) {
   State.current().fps = fps;
   if (panic) {
-      var discardedTime = Math.round(MainLoop.resetFrameDelta());
-      console.warn('Main loop panicked, probably because the browser tab was put in the background. Discarding ' + discardedTime + 'ms');
+    var discardedTime = Math.round(MainLoop.resetFrameDelta());
+    console.warn('Main loop panicked, probably because the browser tab was put in the background. Discarding ' + discardedTime + 'ms');
   }
 }
 

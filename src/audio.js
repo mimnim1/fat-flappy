@@ -14,7 +14,7 @@ function play(audio) {
       audio.currentTime = 0;
       audio.play();
     }
-  }
+  };
 }
 
 module.exports = {
@@ -23,4 +23,4 @@ module.exports = {
   playJump: play(audioJump),
   playPowerup: play(audioPowerup),
   playWarning: play(audioWarning)
-}
+};

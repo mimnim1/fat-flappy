@@ -118,4 +118,4 @@ module.exports = {
   registerEvents: registerEvents,
   draw: draw,
   reset: reset
-}
+};
