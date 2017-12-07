@@ -36,7 +36,7 @@ module.exports = {
   playWarning: play(audioWarning)
 }
 
-},{"./settings":5}],3:[function(require,module,exports){
+},{"./settings":6}],3:[function(require,module,exports){
 let State = require('./state');
 let Settings = require('./settings')();
 
@@ -159,8 +159,9 @@ module.exports = {
   reset: reset
 }
 
-},{"./settings":5,"./state":6}],4:[function(require,module,exports){
+},{"./settings":6,"./state":7}],4:[function(require,module,exports){
 let State = require('./state');
+let Save = require('./save');
 let MainLoop = require('mainloop.js');
 let DOMHelper = require('./domhelper');
 let Audio = require('./audio');
@@ -172,6 +173,13 @@ function spaceDown() {
     State.current().bird.vy = -0.0006;
     State.current().bird.flapCooldown = 10;
   }
+}
+
+function lose() {
+  Save.lastScore = State.current().bird.mass - 1;
+  Save.bestScore = Math.max(Save.bestScore, Save.lastScore);
+  State.reset();
+  DOMHelper.reset();
 }
 
 /**
@@ -189,8 +197,7 @@ function update(delta) {
 
     if (state.bird.y < 0 || state.bird.y > 1) {
       Audio.playCrash();
-      State.reset();
-      DOMHelper.reset();
+      lose();
     }
 
     let pickups = state.pickups;
@@ -252,14 +259,56 @@ State.reset();
 DOMHelper.registerEvents(spaceDown);
 MainLoop.setUpdate(update).setDraw(DOMHelper.draw).setEnd(end).start();
 
-},{"./audio":2,"./domhelper":3,"./state":6,"mainloop.js":1}],5:[function(require,module,exports){
+},{"./audio":2,"./domhelper":3,"./save":5,"./state":7,"mainloop.js":1}],5:[function(require,module,exports){
+const save = {
+    bestScore: 0,
+    lastScore: 0,
+};
+
+const storage = window.localStorage;
+
+// Load the save
+(function() {
+  // check each key seperately for undefined in case of previous storage
+  for (const key in save) {
+    const loadedVal = storage.getItem(key);
+
+    if (!loadedVal === null) {
+      save[key] = JSON.parse(loadedVal);
+    }
+  }
+})();
+
+// Save function
+function saveToStore(key) {
+  const valToSave = save[key];
+
+  storage.setItem(key, JSON.stringify(valToSave));
+}
+
+// Define the exports
+const api = {};
+
+for (const key in save) {
+  Object.defineProperty(api, key, {
+    get: () => save[key],
+    set: (value) => {
+      save[key] = value;
+      saveToStore(key);
+    }
+  });
+}
+
+module.exports = api;
+
+},{}],6:[function(require,module,exports){
 let settings = {
-    mute: false
+  mute: false
 }
 
 module.exports = () => settings;
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 let state;
 let globalId = 0;
 
@@ -299,5 +348,6 @@ module.exports = {
   current: () => state,
   newId: () => globalId++,
   reset: reset
-}
+};
+
 },{}]},{},[4]);

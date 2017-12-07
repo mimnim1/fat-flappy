@@ -1,4 +1,5 @@
 let State = require('./state');
+let Save = require('./save');
 let MainLoop = require('mainloop.js');
 let DOMHelper = require('./domhelper');
 let Audio = require('./audio');
@@ -10,6 +11,13 @@ function spaceDown() {
     State.current().bird.vy = -0.0006;
     State.current().bird.flapCooldown = 10;
   }
+}
+
+function lose() {
+  Save.lastScore = State.current().bird.mass - 1;
+  Save.bestScore = Math.max(Save.bestScore, Save.lastScore);
+  State.reset();
+  DOMHelper.reset();
 }
 
 /**
@@ -27,8 +35,7 @@ function update(delta) {
 
     if (state.bird.y < 0 || state.bird.y > 1) {
       Audio.playCrash();
-      State.reset();
-      DOMHelper.reset();
+      lose();
     }
 
     let pickups = state.pickups;

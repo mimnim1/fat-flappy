@@ -1,5 +1,5 @@
 let settings = {
-    mute: false
+  mute: false
 }
 
 module.exports = () => settings;

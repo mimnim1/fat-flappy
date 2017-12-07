@@ -37,4 +37,4 @@ module.exports = {
   current: () => state,
   newId: () => globalId++,
   reset: reset
-}
+};
