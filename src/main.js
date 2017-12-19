@@ -1,23 +1,16 @@
-let State = require('./state');
-let Save = require('./save');
-let MainLoop = require('mainloop.js');
-let DOMHelper = require('./domhelper');
-let Audio = require('./audio');
+import { Renderer } from './renderer';
+import { Events } from './events';
 
-function spaceDown() {
-  if (State.current().bird.flapCooldown <= 0) {
-    State.current().paused = false;
-    Audio.playJump();
-    State.current().bird.vy = -0.0006;
-    State.current().bird.flapCooldown = 10;
-  }
-}
+import Audio from './audio';
+import Save from './save';
+import State from './state';
+
+import * as MainLoop from 'mainloop.js';
 
 function lose() {
   Save.lastScore = State.current().bird.mass - 1;
   Save.bestScore = Math.max(Save.bestScore, Save.lastScore);
   State.reset();
-  DOMHelper.reset();
 }
 
 /**
@@ -49,7 +42,6 @@ function update(delta) {
         Audio.playCoin();
         state.bird.mass += 1;
         pickups.splice(pickup, 1);
-        DOMHelper.reset();
       }
     }
 
@@ -93,6 +85,21 @@ function end(fps, panic) {
   }
 }
 
-State.reset();
-DOMHelper.registerEvents(spaceDown);
-MainLoop.setUpdate(update).setDraw(DOMHelper.draw).setEnd(end).start();
+window.addEventListener('DOMContentLoaded', () => {
+  const canvas = document.querySelector('canvas');
+
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    canvas.setAttribute('width', rect.width);
+    canvas.setAttribute('height', rect.height);
+  }
+
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  const ctx = canvas.getContext('2d');
+  const renderer = new Renderer(ctx);
+  const events = new Events(canvas);
+  State.reset();
+  MainLoop.setUpdate(update).setDraw(renderer.draw.bind(renderer)).setEnd(end).start();
+});

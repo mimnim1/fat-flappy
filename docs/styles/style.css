@@ -3,13 +3,9 @@
   user-select: none;
 }
 
-html, body, .window {
+html, body, canvas {
   height: 100%;
   width: 100%;
-}
-
-.window {
-  background-color: skyblue;
 }
 
 .mute {
@@ -21,15 +17,6 @@ html, body, .window {
   background-color: beige;
   border: 3px solid burlywood;
   border-radius: 5px;
-}
-
-.instructions {
-  color: white;
-  position: fixed;
-  font-size: 3em;
-  top: 5vh;
-  left: 50%;
-  transform: translateX(-50%);
 }
 
 .stats {

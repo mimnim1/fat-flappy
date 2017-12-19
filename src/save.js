@@ -1,15 +1,17 @@
 const save = {
+  mute: false,
   bestScore: 0,
   lastScore: 0,
 };
 
 const storage = window.localStorage;
+const prefix = 'FatFlappy';
 
 // Load the save
 (function() {
   // check each key seperately for undefined in case of previous storage
   for (const key in save) {
-    const loadedVal = storage.getItem(key);
+    const loadedVal = storage.getItem(prefix + key);
 
     if (!loadedVal === null) {
       save[key] = JSON.parse(loadedVal);
@@ -21,7 +23,7 @@ const storage = window.localStorage;
 function saveToStore(key) {
   const valToSave = save[key];
 
-  storage.setItem(key, JSON.stringify(valToSave));
+  storage.setItem(prefix + key, JSON.stringify(valToSave));
 }
 
 // Define the exports
@@ -37,4 +39,4 @@ for (const key in save) {
   });
 }
 
-module.exports = api;
+export default api;

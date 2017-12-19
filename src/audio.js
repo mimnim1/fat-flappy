@@ -1,4 +1,4 @@
-let Settings = require('./settings')();
+import Save from './save';
 
 let audioCoin = new Audio('assets/coin.wav');
 let audioCrash = new Audio('assets/crash.wav');
@@ -9,7 +9,7 @@ let audioWarning = new Audio('assets/warning.wav');
 
 function play(audio) {
   return () => {
-    if (!Settings.mute) {
+    if (!Save.mute) {
       audio.pause();
       audio.currentTime = 0;
       audio.play();
@@ -17,7 +17,7 @@ function play(audio) {
   };
 }
 
-module.exports = {
+export default {
   playCoin: play(audioCoin),
   playCrash: play(audioCrash),
   playJump: play(audioJump),

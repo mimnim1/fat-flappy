@@ -33,7 +33,7 @@ function reset() {
   };
 }
 
-module.exports = {
+export default {
   current: () => state,
   newId: () => globalId++,
   reset: reset
