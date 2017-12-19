@@ -11,7 +11,14 @@ export class EntityRenderer {
       ctx.ctx.rotate(rotation * Math.PI / 180);
     }
 
-    ctx.ctx.drawImage(image, -image.width / 2, -image.height / 2, ctx.scale * radius * 2, ctx.scale * radius * 2);
+    ctx.ctx.drawImage(image, -ctx.scale * radius, -ctx.scale * radius, ctx.scale * radius * 2, ctx.scale * radius * 2);
+
+    if (ctx.debug) {
+      ctx.ctx.strokeStyle = 'black';
+      ctx.ctx.beginPath();
+      ctx.ctx.arc(0, 0, ctx.scale * radius, 0, 2 * Math.PI);
+      ctx.ctx.stroke();
+    }
 
     ctx.ctx.restore();
   }

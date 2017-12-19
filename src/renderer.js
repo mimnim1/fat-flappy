@@ -12,6 +12,7 @@ export class RenderingContext {
     this.width = width;
     this.height = height;
     this.scale = height;
+    this.debug = true;
   }
 }
 

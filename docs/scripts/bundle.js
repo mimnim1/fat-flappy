@@ -337,6 +337,7 @@ class RenderingContext {
     this.width = width;
     this.height = height;
     this.scale = height;
+    this.debug = true;
   }
 }
 /* unused harmony export RenderingContext */
@@ -442,9 +443,9 @@ class MuteButtonRenderer {
     ctx.ctx.font = '16px \'Segoe UI\', Tahoma, Geneva, Verdana, sans-serif';
     ctx.ctx.textAlign = 'right';
 
-    ctx.ctx.fillText('Mute', ctx.width - ctx.width * 0.05, ctx.height * 0.05);
+    ctx.ctx.fillText('Mute', ctx.width - ctx.scale * 0.05, ctx.scale * 0.05);
     if (__WEBPACK_IMPORTED_MODULE_0__save__["a" /* default */].mute) {
-      // TODO
+      // TODO strikethrough
       ctx.ctx.fillRect();
     }
 
@@ -473,7 +474,14 @@ class EntityRenderer {
       ctx.ctx.rotate(rotation * Math.PI / 180);
     }
 
-    ctx.ctx.drawImage(image, -image.width / 2, -image.height / 2, ctx.scale * radius * 2, ctx.scale * radius * 2);
+    ctx.ctx.drawImage(image, -ctx.scale * radius, -ctx.scale * radius, ctx.scale * radius * 2, ctx.scale * radius * 2);
+
+    if (ctx.debug) {
+      ctx.ctx.strokeStyle = 'black';
+      ctx.ctx.beginPath();
+      ctx.ctx.arc(0, 0, ctx.scale * radius, 0, 2 * Math.PI);
+      ctx.ctx.stroke();
+    }
 
     ctx.ctx.restore();
   }
