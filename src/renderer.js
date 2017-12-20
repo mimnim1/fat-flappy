@@ -39,15 +39,11 @@ export class Renderer {
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
 
     this.backgroundRenderer.draw(renderingContext);
-    this.muteButtonRenderer.draw(renderingContext);
-
-    if (state.paused) {
-      this.instructionsRenderer.draw(renderingContext);
-    }
 
     // ####
     // CAMERA TRANSLATE
     // ####
+    this.ctx.save();
     this.ctx.translate(-(state.bird.x - 0.1) * renderingContext.scale, 0);
     
     this.entityRenderer.draw(renderingContext,
@@ -66,6 +62,17 @@ export class Renderer {
         pickup.x,
         pickup.y,
         pickup.radius);
+    }
+
+    this.ctx.restore();
+    // ####
+    // END CAMERA TRANSLATE
+    // ####
+
+    this.muteButtonRenderer.draw(renderingContext);
+
+    if (state.paused) {
+      this.instructionsRenderer.draw(renderingContext);
     }
   }
 }

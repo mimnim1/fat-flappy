@@ -366,15 +366,11 @@ class Renderer {
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
 
     this.backgroundRenderer.draw(renderingContext);
-    this.muteButtonRenderer.draw(renderingContext);
-
-    if (state.paused) {
-      this.instructionsRenderer.draw(renderingContext);
-    }
 
     // ####
     // CAMERA TRANSLATE
     // ####
+    this.ctx.save();
     this.ctx.translate(-(state.bird.x - 0.1) * renderingContext.scale, 0);
     
     this.entityRenderer.draw(renderingContext,
@@ -393,6 +389,17 @@ class Renderer {
         pickup.x,
         pickup.y,
         pickup.radius);
+    }
+
+    this.ctx.restore();
+    // ####
+    // END CAMERA TRANSLATE
+    // ####
+
+    this.muteButtonRenderer.draw(renderingContext);
+
+    if (state.paused) {
+      this.instructionsRenderer.draw(renderingContext);
     }
   }
 }
@@ -434,18 +441,41 @@ class InstructionsRenderer {
 
 class MuteButtonRenderer {
 
-  constructor() {}
+  constructor() {
+    this.text = 'Mute';
+  }
+
+  setTextStyle(ctx) {
+    ctx.ctx.fillStyle = 'brown';
+    ctx.ctx.font = '16px \'Segoe UI\', Tahoma, Geneva, Verdana, sans-serif';
+    ctx.ctx.textAlign = 'right';
+    ctx.ctx.textBaseline = 'top';
+  }
+
+  setBoxStyle(ctx) {
+    ctx.ctx.fillStyle = 'beige';
+    ctx.ctx.strokeStyle = 'burlywood';
+    ctx.ctx.lineWidth = 3;
+  }
 
   draw(ctx) {
     ctx.ctx.save();
+    this.setTextStyle(ctx);
 
-    ctx.ctx.fillStyle = 'white';
-    ctx.ctx.font = '16px \'Segoe UI\', Tahoma, Geneva, Verdana, sans-serif';
-    ctx.ctx.textAlign = 'right';
+    const screenPadding = ctx.scale * 0.05;
+    const boxPadding = ctx.scale * 0.01;
+    const boxWidth = ctx.ctx.measureText(this.text).width;
+    const boxHeight = 16;
 
-    ctx.ctx.fillText('Mute', ctx.width - ctx.scale * 0.05, ctx.scale * 0.05);
+    this.setBoxStyle(ctx);
+    ctx.ctx.fillRect(ctx.width - screenPadding + boxPadding, screenPadding - boxPadding, -boxWidth - boxPadding * 2, boxHeight + boxPadding * 2);
+    ctx.ctx.strokeRect(ctx.width - screenPadding + boxPadding, screenPadding - boxPadding, -boxWidth - boxPadding * 2, boxHeight + boxPadding * 2);
+
+    this.setTextStyle(ctx);
+    ctx.ctx.fillText(this.text, ctx.width - screenPadding, screenPadding);
+
+    // Strikethrough text if muted
     if (__WEBPACK_IMPORTED_MODULE_0__save__["a" /* default */].mute) {
-      // TODO strikethrough
       ctx.ctx.fillRect();
     }
 
