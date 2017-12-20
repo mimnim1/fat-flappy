@@ -13,7 +13,7 @@ const prefix = 'FatFlappy';
   for (const key in save) {
     const loadedVal = storage.getItem(prefix + key);
 
-    if (!loadedVal === null) {
+    if (loadedVal !== null) {
       save[key] = JSON.parse(loadedVal);
     }
   }
