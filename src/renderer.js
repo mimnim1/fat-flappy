@@ -1,8 +1,7 @@
-import { InstructionsRenderer } from './renderers/instructions';
-import { MuteButtonRenderer } from './renderers/mute-button';
 import { EntityRenderer } from './renderers/entity';
 import State from './state';
 import { BackgroundRenderer } from './renderers/background';
+import { UiRenderer } from './renderers/ui';
 
 export class RenderingContext {
 
@@ -18,12 +17,11 @@ export class RenderingContext {
 
 export class Renderer {
 
-  constructor(ctx) {
+  constructor(ctx, ui) {
     this.ctx = ctx;
     this.backgroundRenderer = new BackgroundRenderer();
-    this.instructionsRenderer = new InstructionsRenderer();
-    this.muteButtonRenderer = new MuteButtonRenderer();
     this.entityRenderer = new EntityRenderer();
+    this.uiRenderer = new UiRenderer(ui);
 
     this.birdImage = new Image();
     this.birdImage.src = './assets/bird.png';
@@ -69,10 +67,6 @@ export class Renderer {
     // END CAMERA TRANSLATE
     // ####
 
-    this.muteButtonRenderer.draw(renderingContext);
-
-    if (state.paused) {
-      this.instructionsRenderer.draw(renderingContext);
-    }
+    this.uiRenderer.draw(renderingContext);
   }
 }

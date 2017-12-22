@@ -6,6 +6,18 @@ import Save from './save';
 import State from './state';
 
 import * as MainLoop from 'mainloop.js';
+import { UI, Button, Label, Anchor } from './ui';
+
+const ui = new UI();
+const muteButton = new Button(80, 28, Anchor.topright(), -20, 20)
+  .setText('Mute')
+  .setTextStyle('brown', '16px \'Segoe UI\', Tahoma, Geneva, Verdana, sans-serif')
+  .setButtonStyle('beige', 'burlywood', 3);
+const instructionLabel = new Label(Anchor.topcenter(), 'center', 0, 30)
+  .setText('Press space to flap')
+  .setTextStyle('white', '3em \'Segoe UI\', Tahoma, Geneva, Verdana, sans-serif');
+ui.addElement(muteButton);
+ui.addElement(instructionLabel);
 
 function lose() {
   Save.lastScore = State.current().bird.mass - 1;
@@ -19,6 +31,9 @@ function lose() {
  */
 function update(delta) {
   let state = State.current();
+
+  instructionLabel.enabled = state.paused;
+  muteButton.strikethrough = Save.mute;
 
   if (!state.paused) {
     // update position
@@ -98,7 +113,7 @@ window.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('resize', resizeCanvas);
 
   const ctx = canvas.getContext('2d');
-  const renderer = new Renderer(ctx);
+  const renderer = new Renderer(ctx, ui);
   const events = new Events(canvas);
   State.reset();
   MainLoop.setUpdate(update).setDraw(renderer.draw.bind(renderer)).setEnd(end).start();
