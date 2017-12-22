@@ -1,5 +1,4 @@
 import { Renderer } from './renderer';
-import { Events } from './events';
 
 import Audio from './audio';
 import Save from './save';
@@ -8,14 +7,30 @@ import State from './state';
 import * as MainLoop from 'mainloop.js';
 import { UI, Button, Label, Anchor } from './ui';
 
-const ui = new UI();
+const ui = new UI()
+  .addEventListener('mousedown', (event) => {
+    if (event.button === 0 && !event.repeat) {
+      jump();
+    }
+  })
+  .addEventListener('keydown', (event) => {
+    if (event.which === 32 && !event.repeat) {
+      jump();
+    }
+  });
+
 const muteButton = new Button(80, 28, Anchor.topright(), -20, 20)
   .setText('Mute')
   .setTextStyle('brown', '16px \'Segoe UI\', Tahoma, Geneva, Verdana, sans-serif')
-  .setButtonStyle('beige', 'burlywood', 3);
+  .setButtonStyle('beige', 'burlywood', 3)
+  .addClickListener(() => {
+    Save.mute = !Save.mute;
+  });
+
 const instructionLabel = new Label(Anchor.topcenter(), 'center', 0, 30)
   .setText('Press space to flap')
   .setTextStyle('white', '3em \'Segoe UI\', Tahoma, Geneva, Verdana, sans-serif');
+
 ui.addElement(muteButton);
 ui.addElement(instructionLabel);
 
@@ -23,6 +38,15 @@ function lose() {
   Save.lastScore = State.current().bird.mass - 1;
   Save.bestScore = Math.max(Save.bestScore, Save.lastScore);
   State.reset();
+}
+
+function jump() {
+  if (State.current().bird.flapCooldown <= 0) {
+    State.current().paused = false;
+    Audio.playJump();
+    State.current().bird.vy = -0.0006;
+    State.current().bird.flapCooldown = 10;
+  }
 }
 
 /**
@@ -114,7 +138,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
   const ctx = canvas.getContext('2d');
   const renderer = new Renderer(ctx, ui);
-  const events = new Events(canvas);
+  ui.addCanvasEvents(canvas);
+
   State.reset();
   MainLoop.setUpdate(update).setDraw(renderer.draw.bind(renderer)).setEnd(end).start();
 });

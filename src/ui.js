@@ -21,6 +21,10 @@ export class UIElement {
     this.enabled = true;
     return this;
   }
+
+  handleEvent() {
+    return false;
+  }
 }
 
 export class Anchor {
@@ -98,6 +102,8 @@ export class Button extends Label {
     this.fill = 'white';
     this.border = 'white';
     this.borderWidth = 0;
+
+    this.clickListeners = [];
   }
 
   setButtonStyle(fill, border, borderWidth) {
@@ -152,12 +158,36 @@ export class Button extends Label {
 
     return y;
   }
+
+  addClickListener(listener) {
+    this.clickListeners.push(listener);
+    return this;
+  }
+
+  handleEvent(event, context) {
+    if (event instanceof MouseEvent && event.target instanceof HTMLCanvasElement) {
+      const canvas = event.target;
+      const path = this.path(canvas.width, canvas.height);
+      if (context.isPointInPath(path, event.x, event.y)) {
+        if (event.type === 'click') {
+          for (const listener of this.clickListeners) {
+            listener(event);
+          }
+        }
+
+        return true;
+      }
+    }
+
+    return false;
+  }
 }
 
 export class UI {
 
   constructor() {
     this.elements = [];
+    this.listeners = {};
   }
 
   addElement(el) {
@@ -166,5 +196,54 @@ export class UI {
     } else {
       throw 'Attempt to add non ui element to ui';
     }
+  }
+
+  addEventListener(event, callback) {
+    if (!this.listeners.hasOwnProperty(event)) {
+      this.listeners[event] = [];
+    }
+
+    this.listeners[event].push(callback);
+
+    return this;
+  }
+
+  eventHappened(event, context) {
+    let eventHandled = false;
+    for (const el of this.elements) {
+      if (el.handleEvent(event, context)) {
+        eventHandled = true;
+        break;
+      }
+    }
+
+    if (!eventHandled && this.listeners.hasOwnProperty(event.type)) {
+      for (const listener of this.listeners[event.type]) {
+        if (listener(event)) {
+          eventHandled = true;
+          break;
+        }
+      }
+    }
+  }
+
+  addCanvasEvents(canvas) {
+    const context = canvas.getContext('2d');
+
+    canvas.addEventListener('click', (event) => {
+      if (event.target === canvas) {
+        this.eventHappened(event, context);
+      }
+    });
+
+    canvas.addEventListener('mousedown', (event) => {
+      if (event.target === canvas) {
+        this.eventHappened(event, context);
+      }
+    });
+
+    window.addEventListener('keydown', (event) => {
+      this.eventHappened(event, context);
+    });
   }
 }

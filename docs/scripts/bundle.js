@@ -60,58 +60,11 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 5);
+/******/ 	return __webpack_require__(__webpack_require__.s = 4);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-let state;
-let globalId = 0;
-
-function reset() {
-  state = {
-    paused: true,
-    fps: 0,
-    gravity: 0.0008 / 1000,
-    bird: {
-      mass: 1,
-      radius: 0.05,
-      x: 0,
-      y: 0.5,
-      vx: 0.7 / 1000,
-      vy: 0,
-      flapCooldown: 0
-    },
-    lastGen: 0.5,
-    pickups: [
-      {
-        id: globalId++,
-        radius: 0.05,
-        x: 0.5,
-        y: 0.5,
-      },
-      {
-        id: globalId++,
-        radius: 0.05,
-        x: 0.5,
-        y: 0.2,
-      }
-    ]
-  };
-}
-
-/* harmony default export */ __webpack_exports__["a"] = ({
-  current: () => state,
-  newId: () => globalId++,
-  reset: reset
-});
-
-
-/***/ }),
-/* 1 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -137,6 +90,10 @@ class UIElement {
   enable() {
     this.enabled = true;
     return this;
+  }
+
+  handleEvent() {
+    return false;
   }
 }
 /* unused harmony export UIElement */
@@ -221,6 +178,8 @@ class Button extends Label {
     this.fill = 'white';
     this.border = 'white';
     this.borderWidth = 0;
+
+    this.clickListeners = [];
   }
 
   setButtonStyle(fill, border, borderWidth) {
@@ -275,6 +234,29 @@ class Button extends Label {
 
     return y;
   }
+
+  addClickListener(listener) {
+    this.clickListeners.push(listener);
+    return this;
+  }
+
+  handleEvent(event, context) {
+    if (event instanceof MouseEvent && event.target instanceof HTMLCanvasElement) {
+      const canvas = event.target;
+      const path = this.path(canvas.width, canvas.height);
+      if (context.isPointInPath(path, event.x, event.y)) {
+        if (event.type === 'click') {
+          for (const listener of this.clickListeners) {
+            listener(event);
+          }
+        }
+
+        return true;
+      }
+    }
+
+    return false;
+  }
 }
 /* harmony export (immutable) */ __webpack_exports__["b"] = Button;
 
@@ -283,6 +265,7 @@ class UI {
 
   constructor() {
     this.elements = [];
+    this.listeners = {};
   }
 
   addElement(el) {
@@ -292,9 +275,105 @@ class UI {
       throw 'Attempt to add non ui element to ui';
     }
   }
+
+  addEventListener(event, callback) {
+    if (!this.listeners.hasOwnProperty(event)) {
+      this.listeners[event] = [];
+    }
+
+    this.listeners[event].push(callback);
+
+    return this;
+  }
+
+  eventHappened(event, context) {
+    let eventHandled = false;
+    for (const el of this.elements) {
+      if (el.handleEvent(event, context)) {
+        eventHandled = true;
+        break;
+      }
+    }
+
+    if (!eventHandled && this.listeners.hasOwnProperty(event.type)) {
+      for (const listener of this.listeners[event.type]) {
+        if (listener(event)) {
+          eventHandled = true;
+          break;
+        }
+      }
+    }
+  }
+
+  addCanvasEvents(canvas) {
+    const context = canvas.getContext('2d');
+
+    canvas.addEventListener('click', (event) => {
+      if (event.target === canvas) {
+        this.eventHappened(event, context);
+      }
+    });
+
+    canvas.addEventListener('mousedown', (event) => {
+      if (event.target === canvas) {
+        this.eventHappened(event, context);
+      }
+    });
+
+    window.addEventListener('keydown', (event) => {
+      this.eventHappened(event, context);
+    });
+  }
 }
 /* harmony export (immutable) */ __webpack_exports__["d"] = UI;
 
+
+
+/***/ }),
+/* 1 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+let state;
+let globalId = 0;
+
+function reset() {
+  state = {
+    paused: true,
+    fps: 0,
+    gravity: 0.0008 / 1000,
+    bird: {
+      mass: 1,
+      radius: 0.05,
+      x: 0,
+      y: 0.5,
+      vx: 0.7 / 1000,
+      vy: 0,
+      flapCooldown: 0
+    },
+    lastGen: 0.5,
+    pickups: [
+      {
+        id: globalId++,
+        radius: 0.05,
+        x: 0.5,
+        y: 0.5,
+      },
+      {
+        id: globalId++,
+        radius: 0.05,
+        x: 0.5,
+        y: 0.2,
+      }
+    ]
+  };
+}
+
+/* harmony default export */ __webpack_exports__["a"] = ({
+  current: () => state,
+  newId: () => globalId++,
+  reset: reset
+});
 
 
 /***/ }),
@@ -302,7 +381,7 @@ class UI {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__ui__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__ui__ = __webpack_require__(0);
 
 
 class UiLabelRenderer {
@@ -364,40 +443,6 @@ class UiLabelRenderer {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__save__ = __webpack_require__(4);
-
-
-let audioCoin = new Audio('assets/coin.wav');
-let audioCrash = new Audio('assets/crash.wav');
-let audioJump = new Audio('assets/jump.wav');
-audioJump.volume = 0.6;
-let audioPowerup = new Audio('assets/powerup.wav');
-let audioWarning = new Audio('assets/warning.wav');
-
-function play(audio) {
-  return () => {
-    if (!__WEBPACK_IMPORTED_MODULE_0__save__["a" /* default */].mute) {
-      audio.pause();
-      audio.currentTime = 0;
-      audio.play();
-    }
-  };
-}
-
-/* harmony default export */ __webpack_exports__["a"] = ({
-  playCoin: play(audioCoin),
-  playCrash: play(audioCrash),
-  playJump: play(audioJump),
-  playPowerup: play(audioPowerup),
-  playWarning: play(audioWarning)
-});
-
-
-/***/ }),
-/* 4 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
 const save = {
   mute: false,
   bestScore: 0,
@@ -443,19 +488,18 @@ for (const key in save) {
 
 
 /***/ }),
-/* 5 */
+/* 4 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__renderer__ = __webpack_require__(6);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__events__ = __webpack_require__(11);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__audio__ = __webpack_require__(3);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__save__ = __webpack_require__(4);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__state__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5_mainloop_js__ = __webpack_require__(12);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5_mainloop_js___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_5_mainloop_js__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__ui__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__renderer__ = __webpack_require__(5);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__audio__ = __webpack_require__(10);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__save__ = __webpack_require__(3);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__state__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4_mainloop_js__ = __webpack_require__(11);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4_mainloop_js___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_4_mainloop_js__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__ui__ = __webpack_require__(0);
 
 
 
@@ -465,22 +509,46 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 
 
+const ui = new __WEBPACK_IMPORTED_MODULE_5__ui__["d" /* UI */]()
+  .addEventListener('mousedown', (event) => {
+    if (event.button === 0 && !event.repeat) {
+      jump();
+    }
+  })
+  .addEventListener('keydown', (event) => {
+    if (event.which === 32 && !event.repeat) {
+      jump();
+    }
+  });
 
-const ui = new __WEBPACK_IMPORTED_MODULE_6__ui__["d" /* UI */]();
-const muteButton = new __WEBPACK_IMPORTED_MODULE_6__ui__["b" /* Button */](80, 28, __WEBPACK_IMPORTED_MODULE_6__ui__["a" /* Anchor */].topright(), -20, 20)
+const muteButton = new __WEBPACK_IMPORTED_MODULE_5__ui__["b" /* Button */](80, 28, __WEBPACK_IMPORTED_MODULE_5__ui__["a" /* Anchor */].topright(), -20, 20)
   .setText('Mute')
   .setTextStyle('brown', '16px \'Segoe UI\', Tahoma, Geneva, Verdana, sans-serif')
-  .setButtonStyle('beige', 'burlywood', 3);
-const instructionLabel = new __WEBPACK_IMPORTED_MODULE_6__ui__["c" /* Label */](__WEBPACK_IMPORTED_MODULE_6__ui__["a" /* Anchor */].topcenter(), 'center', 0, 30)
+  .setButtonStyle('beige', 'burlywood', 3)
+  .addClickListener(() => {
+    __WEBPACK_IMPORTED_MODULE_2__save__["a" /* default */].mute = !__WEBPACK_IMPORTED_MODULE_2__save__["a" /* default */].mute;
+  });
+
+const instructionLabel = new __WEBPACK_IMPORTED_MODULE_5__ui__["c" /* Label */](__WEBPACK_IMPORTED_MODULE_5__ui__["a" /* Anchor */].topcenter(), 'center', 0, 30)
   .setText('Press space to flap')
   .setTextStyle('white', '3em \'Segoe UI\', Tahoma, Geneva, Verdana, sans-serif');
+
 ui.addElement(muteButton);
 ui.addElement(instructionLabel);
 
 function lose() {
-  __WEBPACK_IMPORTED_MODULE_3__save__["a" /* default */].lastScore = __WEBPACK_IMPORTED_MODULE_4__state__["a" /* default */].current().bird.mass - 1;
-  __WEBPACK_IMPORTED_MODULE_3__save__["a" /* default */].bestScore = Math.max(__WEBPACK_IMPORTED_MODULE_3__save__["a" /* default */].bestScore, __WEBPACK_IMPORTED_MODULE_3__save__["a" /* default */].lastScore);
-  __WEBPACK_IMPORTED_MODULE_4__state__["a" /* default */].reset();
+  __WEBPACK_IMPORTED_MODULE_2__save__["a" /* default */].lastScore = __WEBPACK_IMPORTED_MODULE_3__state__["a" /* default */].current().bird.mass - 1;
+  __WEBPACK_IMPORTED_MODULE_2__save__["a" /* default */].bestScore = Math.max(__WEBPACK_IMPORTED_MODULE_2__save__["a" /* default */].bestScore, __WEBPACK_IMPORTED_MODULE_2__save__["a" /* default */].lastScore);
+  __WEBPACK_IMPORTED_MODULE_3__state__["a" /* default */].reset();
+}
+
+function jump() {
+  if (__WEBPACK_IMPORTED_MODULE_3__state__["a" /* default */].current().bird.flapCooldown <= 0) {
+    __WEBPACK_IMPORTED_MODULE_3__state__["a" /* default */].current().paused = false;
+    __WEBPACK_IMPORTED_MODULE_1__audio__["a" /* default */].playJump();
+    __WEBPACK_IMPORTED_MODULE_3__state__["a" /* default */].current().bird.vy = -0.0006;
+    __WEBPACK_IMPORTED_MODULE_3__state__["a" /* default */].current().bird.flapCooldown = 10;
+  }
 }
 
 /**
@@ -488,10 +556,10 @@ function lose() {
  *   The amount of time since the last update, in milliseconds.
  */
 function update(delta) {
-  let state = __WEBPACK_IMPORTED_MODULE_4__state__["a" /* default */].current();
+  let state = __WEBPACK_IMPORTED_MODULE_3__state__["a" /* default */].current();
 
   instructionLabel.enabled = state.paused;
-  muteButton.strikethrough = __WEBPACK_IMPORTED_MODULE_3__save__["a" /* default */].mute;
+  muteButton.strikethrough = __WEBPACK_IMPORTED_MODULE_2__save__["a" /* default */].mute;
 
   if (!state.paused) {
     // update position
@@ -500,7 +568,7 @@ function update(delta) {
     state.bird.vy += state.gravity * state.bird.mass * delta;
 
     if (state.bird.y < 0 || state.bird.y > 1) {
-      __WEBPACK_IMPORTED_MODULE_2__audio__["a" /* default */].playCrash();
+      __WEBPACK_IMPORTED_MODULE_1__audio__["a" /* default */].playCrash();
       lose();
     }
 
@@ -512,7 +580,7 @@ function update(delta) {
       let yDiff = pickups[pickup].y - state.bird.y;
       let distanceToBird = Math.sqrt(xDiff * xDiff + yDiff * yDiff);
       if (distanceToBird < state.bird.radius + pickups[pickup].radius) {
-        __WEBPACK_IMPORTED_MODULE_2__audio__["a" /* default */].playCoin();
+        __WEBPACK_IMPORTED_MODULE_1__audio__["a" /* default */].playCoin();
         state.bird.mass += 1;
         pickups.splice(pickup, 1);
       }
@@ -528,7 +596,7 @@ function update(delta) {
 
       if (rand < 0.4) {
         pickups.push({
-          id: __WEBPACK_IMPORTED_MODULE_4__state__["a" /* default */].newId(),
+          id: __WEBPACK_IMPORTED_MODULE_3__state__["a" /* default */].newId(),
           radius: 0.05,
           x: state.lastGen,
           y: 0.5,
@@ -537,7 +605,7 @@ function update(delta) {
 
       if (rand < 0.2) {
         pickups.push({
-          id: __WEBPACK_IMPORTED_MODULE_4__state__["a" /* default */].newId(),
+          id: __WEBPACK_IMPORTED_MODULE_3__state__["a" /* default */].newId(),
           radius: 0.05,
           x: state.lastGen,
           y: 0.2,
@@ -546,14 +614,14 @@ function update(delta) {
     }
 
     // other logic
-    __WEBPACK_IMPORTED_MODULE_4__state__["a" /* default */].current().bird.flapCooldown -= delta;
+    __WEBPACK_IMPORTED_MODULE_3__state__["a" /* default */].current().bird.flapCooldown -= delta;
   }
 }
 
 function end(fps, panic) {
-  __WEBPACK_IMPORTED_MODULE_4__state__["a" /* default */].current().fps = fps;
+  __WEBPACK_IMPORTED_MODULE_3__state__["a" /* default */].current().fps = fps;
   if (panic) {
-    var discardedTime = Math.round(__WEBPACK_IMPORTED_MODULE_5_mainloop_js__["resetFrameDelta"]());
+    var discardedTime = Math.round(__WEBPACK_IMPORTED_MODULE_4_mainloop_js__["resetFrameDelta"]());
     console.warn('Main loop panicked, probably because the browser tab was put in the background. Discarding ' + discardedTime + 'ms');
   }
 }
@@ -572,21 +640,22 @@ window.addEventListener('DOMContentLoaded', () => {
 
   const ctx = canvas.getContext('2d');
   const renderer = new __WEBPACK_IMPORTED_MODULE_0__renderer__["a" /* Renderer */](ctx, ui);
-  const events = new __WEBPACK_IMPORTED_MODULE_1__events__["a" /* Events */](canvas);
-  __WEBPACK_IMPORTED_MODULE_4__state__["a" /* default */].reset();
-  __WEBPACK_IMPORTED_MODULE_5_mainloop_js__["setUpdate"](update).setDraw(renderer.draw.bind(renderer)).setEnd(end).start();
+  ui.addCanvasEvents(canvas);
+
+  __WEBPACK_IMPORTED_MODULE_3__state__["a" /* default */].reset();
+  __WEBPACK_IMPORTED_MODULE_4_mainloop_js__["setUpdate"](update).setDraw(renderer.draw.bind(renderer)).setEnd(end).start();
 });
 
 
 /***/ }),
-/* 6 */
+/* 5 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__renderers_entity__ = __webpack_require__(7);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__state__ = __webpack_require__(0);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__renderers_background__ = __webpack_require__(8);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__renderers_ui__ = __webpack_require__(9);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__renderers_entity__ = __webpack_require__(6);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__state__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__renderers_background__ = __webpack_require__(7);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__renderers_ui__ = __webpack_require__(8);
 
 
 
@@ -666,7 +735,7 @@ class Renderer {
 
 
 /***/ }),
-/* 7 */
+/* 6 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -700,7 +769,7 @@ class EntityRenderer {
 
 
 /***/ }),
-/* 8 */
+/* 7 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -721,13 +790,13 @@ class BackgroundRenderer {
 
 
 /***/ }),
-/* 9 */
+/* 8 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__ui_button__ = __webpack_require__(10);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__ui_button__ = __webpack_require__(9);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__ui_label__ = __webpack_require__(2);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__ui__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__ui__ = __webpack_require__(0);
 
 
 
@@ -766,7 +835,7 @@ class UiRenderer {
 
 
 /***/ }),
-/* 10 */
+/* 9 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -809,118 +878,41 @@ class UiButtonRenderer extends __WEBPACK_IMPORTED_MODULE_0__ui_label__["a" /* Ui
 
 
 /***/ }),
-/* 11 */
+/* 10 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__audio__ = __webpack_require__(3);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__state__ = __webpack_require__(0);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__save__ = __webpack_require__(3);
 
 
+let audioCoin = new Audio('assets/coin.wav');
+let audioCrash = new Audio('assets/crash.wav');
+let audioJump = new Audio('assets/jump.wav');
+audioJump.volume = 0.6;
+let audioPowerup = new Audio('assets/powerup.wav');
+let audioWarning = new Audio('assets/warning.wav');
 
-function jump() {
-  if (__WEBPACK_IMPORTED_MODULE_1__state__["a" /* default */].current().bird.flapCooldown <= 0) {
-    __WEBPACK_IMPORTED_MODULE_1__state__["a" /* default */].current().paused = false;
-    __WEBPACK_IMPORTED_MODULE_0__audio__["a" /* default */].playJump();
-    __WEBPACK_IMPORTED_MODULE_1__state__["a" /* default */].current().bird.vy = -0.0006;
-    __WEBPACK_IMPORTED_MODULE_1__state__["a" /* default */].current().bird.flapCooldown = 10;
-  }
-}
-
-class EventListener {
-
-  constructor(parent, event) {
-    this.parent = parent;
-    this.event = event;
-
-    this.callbacks = [];
-  }
-
-  trigger(event, ...args) {
-    for (const callback of this.callbacks) {
-      callback.apply(callback, args);
+function play(audio) {
+  return () => {
+    if (!__WEBPACK_IMPORTED_MODULE_0__save__["a" /* default */].mute) {
+      audio.pause();
+      audio.currentTime = 0;
+      audio.play();
     }
-  }
-
-  then(callback) {
-    this.callbacks.push(callback);
-    return this;
-  }
-
-  unregister() {
-    parent.unregister();
-  }
+  };
 }
-/* unused harmony export EventListener */
 
-
-class MouseListener extends EventListener {
-
-  constructor(parent, event, path) {
-    super(parent, event);
-    this.path = path;
-  }
-
-  trigger(event, ...args) {
-    switch (event) {
-    case 'click':
-      break;
-    default:
-      return;
-    }
-
-    super.trigger(event, ...args);
-  }
-}
-/* unused harmony export MouseListener */
-
-
-class Events {
-
-  constructor(canvas) {
-    this.listeners = [];
-    this.canvas = canvas;
-
-    canvas.addEventListener('click', (event) => {
-      this.mouseHappened(event);
-    });
-
-    // mute.addEventListener('click', (event) => {
-    //   Settings.mute = !Settings.mute;
-    // });
-    
-    window.addEventListener('keydown', (event) => {
-      if (event.which === 32 && !event.repeat) {
-        jump();
-      }
-    });
-  
-    window.addEventListener('mousedown', (event) => {
-      if (event.button === 0 && !event.repeat) {
-        jump();
-      }
-    });
-  }
-
-  addListener(path) {
-    const clickRegion = new MouseListener(this, event, path);
-    this.listeners.push(clickRegion);
-    return clickRegion;
-  }
-
-  mouseHappened(event) {
-    this.listeners.forEach(listener => {
-      // TODO give mouse position to listener
-      listener.trigger('mouse', event.x);
-    });
-  }
-}
-/* harmony export (immutable) */ __webpack_exports__["a"] = Events;
-
+/* harmony default export */ __webpack_exports__["a"] = ({
+  playCoin: play(audioCoin),
+  playCrash: play(audioCrash),
+  playJump: play(audioJump),
+  playPowerup: play(audioPowerup),
+  playWarning: play(audioWarning)
+});
 
 
 /***/ }),
-/* 12 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/**
